@@ -6,6 +6,8 @@ COPY .apt.sources.list /etc/apt/sources.list
 ARG DAPPER_HOST_ARCH=amd64
 ENV HOST_ARCH=${DAPPER_HOST_ARCH} ARCH=${DAPPER_HOST_ARCH}
 
+ENV LOCAL_MIRROR=http://192.168.1.101
+
 RUN apt-get update && \
     apt-get install -y gcc ca-certificates git wget curl vim less file && \
     rm -f /bin/sh && ln -s /bin/bash /bin/sh
@@ -16,10 +18,10 @@ ENV GOLANG_ARCH_amd64=amd64 GOLANG_ARCH_arm=armv6l GOLANG_ARCH=GOLANG_ARCH_${ARC
 ENV GOTOOLS_PATH=${GOPATH}/src/golang.org/x
 RUN mkdir -p ${GOTOOLS_PATH} && git clone https://github.com/golang/tools.git ${GOTOOLS_PATH}/tools
 
-RUN wget -O - https://storage.googleapis.com/golang/go1.7.4.linux-${!GOLANG_ARCH}.tar.gz | tar -xzf - -C /usr/local && \
+RUN wget -O - $LOCAL_MIRROR//golang/go1.7.4.linux-${!GOLANG_ARCH}.tar.gz | tar -xzf - -C /usr/local && \
     go get github.com/rancher/trash && go get github.com/golang/lint/golint
 
-ENV DOCKER_URL_amd64=https://get.docker.com/builds/Linux/x86_64/docker-1.10.3 \
+ENV DOCKER_URL_amd64=$LOCAL_MIRROR/docker/x86_64/docker-1.10.3 \
     DOCKER_URL_arm=https://github.com/rancher/docker/releases/download/v1.10.3-ros1/docker-1.10.3_arm \
     DOCKER_URL=DOCKER_URL_${ARCH}
 
