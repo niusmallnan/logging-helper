@@ -1,4 +1,4 @@
-package main
+package helper
 
 func NewHelper(containersDir string, volumesDir string) *Helper {
 	return &Helper{

@@ -1,4 +1,4 @@
-package main
+package helper
 
 type LoggingFileUpdater interface {
 	LinkContainer(containerID string)
