@@ -4,19 +4,19 @@ import (
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/niusmallnan/helper"
+	"github.com/niusmallnan/logging-helper/helper"
 	"github.com/rancher/go-rancher-metadata/metadata"
 )
 
 func WatchMetadata(client metadata.Client, updater helper.LoggingFileUpdater) error {
 	logrus.Infof("Subscribing to metadata changes.")
 
-	selfHost, err = w.client.GetSelfHost()
+	selfHost, err := client.GetSelfHost()
 	if err != nil {
 		logrus.Fatalf("Can not get self host UUID from rancher metadata.")
 	}
 
-	watcher := metadataWatcher{
+	watcher := &metadataWatcher{
 		client:      client,
 		hostUUID:    selfHost.UUID,
 		fileUpdater: updater,
@@ -39,7 +39,9 @@ func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
 
 	for _, c := range containers {
 		if c.HostUUID == w.hostUUID && c.State == "running" {
-			containerID = c.ExternalId
+			containerID := c.ExternalId
+			w.fileUpdater.LinkContainer(containerID)
+			w.fileUpdater.LinkVolumeByContainerID(containerID)
 		}
 	}
 }

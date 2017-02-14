@@ -6,7 +6,8 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/niusmallnan/helper"
+	"github.com/niusmallnan/logging-helper/helper"
+	"github.com/niusmallnan/logging-helper/resourcewatchers"
 	"github.com/pkg/errors"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/urfave/cli"
@@ -29,7 +30,7 @@ func main() {
 		cli.IntFlag{
 			Name:  "health-check-port",
 			Usage: "Port to listen on for healthchecks",
-			Value: "9898",
+			Value: 9898,
 		},
 		cli.StringFlag{
 			Name:  "docker-graph-dir",
@@ -57,15 +58,15 @@ func run(c *cli.Context) error {
 	}
 
 	mdClient := metadata.NewClient(fmt.Sprintf("http://%s/2016-07-29", c.String("metadata-address")))
-	helper := helper.NewHelper(c.String("logging-containers-dir"), c.String("logging-volumes-dir"))
+	helper := helper.NewHelper(c.String("docker-graph-dir"), c.String("logging-containers-dir"), c.String("logging-volumes-dir"))
 
 	exit := make(chan error)
 
-	//go func(exit chan<- error) {
-	//err := resourcewatchers.WatchMetadata(mdClient, scheduler)
-	//exit <- errors.Wrap(err, "Metadata watcher exited")
+	go func(exit chan<- error) {
+		err := resourcewatchers.WatchMetadata(mdClient, helper)
+		exit <- errors.Wrap(err, "Metadata watcher exited")
 
-	//}(exit)
+	}(exit)
 
 	go func(exit chan<- error) {
 		err := startHealthCheck(c.Int("health-check-port"))
