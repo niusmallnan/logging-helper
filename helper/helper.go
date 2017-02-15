@@ -38,6 +38,8 @@ func NewHelper(dockerGraphDir string, containersDir string, volumesDir string) *
 		containersCache: make(map[string]string),
 		volumesCache:    make(map[string]string),
 	}
+	mkdir(containersDir)
+	mkdir(volumesDir)
 	return helper
 }
 
@@ -72,11 +74,12 @@ func (h *Helper) LinkContainer(containerID string) error {
 		logrus.Debugf("LinkContainer, ContainerID: %s has been linked", h.containersCache[newPath])
 		return nil
 	}
-	oldPath := filepath.Join(h.dockerGraphDir, "containers", jsonLoggingFile)
+	oldPath := filepath.Join(h.dockerGraphDir, "containers", containerID, jsonLoggingFile)
 	err := h.addSymlink(containerID, oldPath, newPath)
 	if err != nil {
 		return err
 	}
+	logrus.Debugf("LinkContainer, ContainerID: %s, Linking", containerID)
 	h.containersCache[newPath] = containerID
 	return nil
 }
@@ -95,22 +98,16 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 			}
 			for _, oldPath := range oldPathes {
 				_, oldFile := filepath.Split(oldPath)
-				newDir := filepath.Join(h.volumesDir, mount.Name)
-				newPath := filepath.Join(newDir, oldFile)
+				newPath := filepath.Join(h.volumesDir, fmt.Sprintf("%s-%s-%s", containerID, mount.Name, oldFile))
 				if _, ok := h.volumesCache[newPath]; ok {
 					logrus.Debugf("LinkVolume, ContainerID: %s has been linked", h.volumesCache[newPath])
 					return nil
-				}
-				if _, err = os.Stat(newDir); os.IsNotExist(err) {
-					err = os.Mkdir(newDir, 664)
-					if err != nil {
-						return errors.Wrap(err, "Failed to mkdir")
-					}
 				}
 				err = h.addSymlink(containerID, oldPath, newPath)
 				if err != nil {
 					return err
 				}
+				logrus.Debugf("LinkVolume, ContainerID: %s, Linking", containerID)
 				h.volumesCache[newPath] = containerID
 			}
 		}

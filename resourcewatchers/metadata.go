@@ -2,6 +2,7 @@ package resourcewatchers
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/niusmallnan/logging-helper/helper"
@@ -27,15 +28,22 @@ func WatchMetadata(client metadata.Client, updater helper.LoggingFileUpdater) er
 type metadataWatcher struct {
 	client                metadata.Client
 	consecutiveErrorCount int
+	updateCount           int
 	hostUUID              string
 	fileUpdater           helper.LoggingFileUpdater
+	mu                    sync.Mutex
 }
 
 func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	containers, err := w.client.GetContainers()
 	if err != nil {
 		w.checkError(err)
 	}
+	w.updateCount++
+	logrus.Debugf("Metadata update count: %d", w.updateCount)
 
 	for _, c := range containers {
 		if c.HostUUID == w.hostUUID && c.State == "running" {
@@ -43,6 +51,11 @@ func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
 			w.fileUpdater.LinkContainer(containerID)
 			w.fileUpdater.LinkVolumeByContainerID(containerID)
 		}
+	}
+
+	if w.updateCount%50 == 0 {
+		logrus.Infof("Clean dead links, update count:%d", w.updateCount)
+		w.fileUpdater.CleanDeadLinks()
 	}
 }
 

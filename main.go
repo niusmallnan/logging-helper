@@ -22,6 +22,11 @@ func main() {
 	app.Usage = "A logging helper for Rancher"
 	app.Action = run
 	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:   "debug, d",
+			Usage:  "Debug logging",
+			EnvVar: "DEBUG",
+		},
 		cli.StringFlag{
 			Name:  "metadata-address",
 			Usage: "The metadata service address",
@@ -53,7 +58,7 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	if os.Getenv("RANCHER_DEBUG") == "true" {
+	if c.Bool("debug") {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
