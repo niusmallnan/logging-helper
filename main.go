@@ -30,7 +30,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "metadata-address",
 			Usage: "The metadata service address",
-			Value: "rancher-metadata",
+			Value: "rancher-metadata.rancher.internal",
 		},
 		cli.IntFlag{
 			Name:  "health-check-port",
@@ -38,19 +38,22 @@ func main() {
 			Value: 9898,
 		},
 		cli.StringFlag{
-			Name:  "docker-graph-dir",
-			Usage: "Root of the Docker runtime",
-			Value: "/var/lib/docker",
+			Name:   "docker-graph-dir",
+			Usage:  "Root of the Docker runtime",
+			Value:  "/var/lib/docker",
+			EnvVar: "DOCKER_GRAPH_DIR",
 		},
 		cli.StringFlag{
-			Name:  "logging-containers-dir",
-			Usage: "Root of the docker stdout logging files",
-			Value: "/var/log/logging-containers",
+			Name:   "logging-containers-dir",
+			Usage:  "Root of the docker stdout logging files",
+			Value:  "/var/log/logging-containers",
+			EnvVar: "LOG_CNT_DIR",
 		},
 		cli.StringFlag{
-			Name:  "logging-volumes-dir",
-			Usage: "Root of the custom logging files ",
-			Value: "/var/log/logging-volumes",
+			Name:   "logging-volumes-dir",
+			Usage:  "Root of the custom logging files ",
+			Value:  "/var/log/logging-volumes",
+			EnvVar: "LOG_VOL_DIR",
 		},
 	}
 
