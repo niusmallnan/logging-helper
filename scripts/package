@@ -10,7 +10,7 @@ SUFFIX=""
 cd $(dirname $0)/../package
 
 TAG=${TAG:-${VERSION}${SUFFIX}}
-REPO=${REPO:-rancher}
+REPO=${REPO:-niusmallnan}
 
 cp ../bin/logging-helper .
 docker build -t ${REPO}/logging-helper:${TAG} .
