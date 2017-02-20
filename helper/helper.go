@@ -4,28 +4,33 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 	"golang.org/x/net/context"
-)
-
-const (
-	rancherLoggingVolumeName = "rancher-logging"
 )
 
 type Helper struct {
 	dockerGraphDir  string
 	containersDir   string
 	volumesDir      string
+	volumesPattern  string
+	filesPattern    string
 	dockerClient    *client.Client
 	containersCache map[string]string
 	volumesCache    map[string]string
 }
 
-func NewHelper(dockerGraphDir string, containersDir string, volumesDir string) *Helper {
+func NewHelper(c *cli.Context) *Helper {
+	dockerGraphDir := c.String("docker-graph-dir")
+	containersDir := c.String("logging-containers-dir")
+	volumesDir := c.String("logging-volumes-dir")
+	volumesPattern := c.String("logging-volumes-pattern")
+	filesPattern := c.String("logging-files-pattern")
+
 	dockerClient, err := NewDockerClient()
 	if err != nil {
 		logrus.Fatalf("Failed to init docker client")
@@ -34,6 +39,8 @@ func NewHelper(dockerGraphDir string, containersDir string, volumesDir string) *
 		dockerGraphDir:  dockerGraphDir,
 		containersDir:   containersDir,
 		volumesDir:      volumesDir,
+		volumesPattern:  volumesPattern,
+		filesPattern:    filesPattern,
 		dockerClient:    dockerClient,
 		containersCache: make(map[string]string),
 		volumesCache:    make(map[string]string),
@@ -91,8 +98,12 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 	}
 
 	for _, mount := range container.Mounts {
-		if strings.Contains(mount.Name, rancherLoggingVolumeName) {
-			oldPathes, err := filepath.Glob(filepath.Join(mount.Source, "/*.log"))
+		matched, err := regexp.MatchString(h.volumesPattern, mount.Name)
+		if err != nil {
+			return errors.Wrap(err, "Failed to match volumes pattern")
+		}
+		if matched {
+			oldPathes, err := filepath.Glob(filepath.Join(mount.Source, fmt.Sprintf("/%s", h.filesPattern)))
 			if err != nil {
 				return errors.Wrap(err, "Failed to gather volume logging files")
 			}
@@ -117,11 +128,11 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 }
 
 func (h *Helper) CleanDeadLinks() {
-	containerLogSymlinks, err := filepath.Glob(filepath.Join(h.containersDir, "/*.log"))
+	containerLogSymlinks, err := filepath.Glob(filepath.Join(h.containersDir, fmt.Sprintf("/%s", h.filesPattern)))
 	if err == nil {
 		h.removeSymlink(containerLogSymlinks)
 	}
-	volumesLogSymlinks, err := filepath.Glob(filepath.Join(h.volumesDir, "/*", "/*.log"))
+	volumesLogSymlinks, err := filepath.Glob(filepath.Join(h.volumesDir, "/*", fmt.Sprintf("/%s", h.filesPattern)))
 	if err == nil {
 		h.removeSymlink(volumesLogSymlinks)
 	}

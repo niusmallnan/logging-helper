@@ -55,6 +55,18 @@ func main() {
 			Value:  "/var/log/logging-volumes",
 			EnvVar: "LOG_VOL_DIR",
 		},
+		cli.StringFlag{
+			Name:   "logging-volumes-pattern",
+			Usage:  "Pattern of the custom logging volumes",
+			Value:  "rancher-logging*",
+			EnvVar: "LOG_VOL_PATTERN",
+		},
+		cli.StringFlag{
+			Name:   "logging-files-pattern",
+			Usage:  "Pattern of the custom logging files",
+			Value:  "*.log",
+			EnvVar: "LOG_FILE_PATTERN",
+		},
 	}
 
 	app.Run(os.Args)
@@ -66,7 +78,7 @@ func run(c *cli.Context) error {
 	}
 
 	mdClient := metadata.NewClient(fmt.Sprintf("http://%s/2016-07-29", c.String("metadata-address")))
-	helper := helper.NewHelper(c.String("docker-graph-dir"), c.String("logging-containers-dir"), c.String("logging-volumes-dir"))
+	helper := helper.NewHelper(c)
 
 	exit := make(chan error)
 
