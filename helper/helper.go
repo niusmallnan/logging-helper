@@ -108,6 +108,7 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 			return errors.Wrap(err, "Failed to match volumes pattern")
 		}
 		if matched {
+			logrus.Debugf("Volume %s matched", mount.Name)
 			oldPathes, err := filepath.Glob(filepath.Join(mount.Source, fmt.Sprintf("/%s", h.filesPattern)))
 			if err != nil {
 				return errors.Wrap(err, "Failed to gather volume logging files")
@@ -120,11 +121,12 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 				newPath := filepath.Join(h.volumesDir, fmt.Sprintf("%s-%s-%s", containerID, mount.Name, oldFile))
 				if _, ok := h.volumesCache[newPath]; ok {
 					logrus.Debugf("LinkVolume, ContainerID: %s has been linked", h.volumesCache[newPath])
-					return nil
+					continue
 				}
 				err = h.addSymlink(containerID, oldPath, newPath)
 				if err != nil {
-					return err
+					logrus.Error(err)
+					continue
 				}
 				logrus.Debugf("LinkVolume, ContainerID: %s, Linking", containerID)
 				h.volumesCache[newPath] = containerID

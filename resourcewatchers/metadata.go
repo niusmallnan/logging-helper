@@ -48,8 +48,15 @@ func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
 	for _, c := range containers {
 		if c.HostUUID == w.hostUUID && c.State == "running" {
 			containerID := c.ExternalId
-			w.fileUpdater.LinkContainer(containerID)
-			w.fileUpdater.LinkVolumeByContainerID(containerID)
+			err = w.fileUpdater.LinkContainer(containerID)
+			if err != nil {
+				logrus.Error(err)
+			}
+			err = w.fileUpdater.LinkVolumeByContainerID(containerID)
+			if err != nil {
+				logrus.Error(err)
+			}
+
 		}
 	}
 
