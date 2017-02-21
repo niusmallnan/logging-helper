@@ -5,12 +5,17 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
+)
+
+const (
+	volumeSymlinkSuffix = ".log"
 )
 
 type Helper struct {
@@ -109,6 +114,9 @@ func (h *Helper) LinkVolumeByContainerID(containerID string) error {
 			}
 			for _, oldPath := range oldPathes {
 				_, oldFile := filepath.Split(oldPath)
+				if strings.HasSuffix(oldFile, volumeSymlinkSuffix) == false {
+					oldFile = fmt.Sprintf("%s%s", oldFile, volumeSymlinkSuffix)
+				}
 				newPath := filepath.Join(h.volumesDir, fmt.Sprintf("%s-%s-%s", containerID, mount.Name, oldFile))
 				if _, ok := h.volumesCache[newPath]; ok {
 					logrus.Debugf("LinkVolume, ContainerID: %s has been linked", h.volumesCache[newPath])
