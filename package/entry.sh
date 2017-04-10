@@ -2,9 +2,11 @@
 
 set -e
 
-for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run; do
+for i in $(curl -s --unix /var/run/docker.sock http://localhost/info | jq -r .DockerRootDir) /var/lib/docker /run /var/run; do
     for m in $(tac /proc/mounts | awk '{print $2}' | grep ^${i}/); do
-        umount $m || true
+        if [ "$m" != "/var/run/docker.sock"  ]; then
+            umount $m || true
+        fi
     done
 done
 

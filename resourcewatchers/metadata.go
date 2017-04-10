@@ -38,6 +38,11 @@ func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+	stack, err := w.client.GetSelfStack()
+	if err != nil {
+		w.checkError(err)
+	}
+
 	containers, err := w.client.GetContainers()
 	if err != nil {
 		w.checkError(err)
@@ -46,7 +51,7 @@ func (w *metadataWatcher) updateFromMetadata(mdVersion string) {
 	logrus.Debugf("Metadata update count: %d", w.updateCount)
 
 	for _, c := range containers {
-		if c.HostUUID == w.hostUUID && c.State == "running" {
+		if c.HostUUID == w.hostUUID && c.State == "running" && c.StackName != stack.Name {
 			containerID := c.ExternalId
 			err = w.fileUpdater.LinkContainer(containerID)
 			if err != nil {
